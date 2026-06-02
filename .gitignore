@@ -216,3 +216,13 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- Spécifique projet Data Lake IoT ---
+# Données (re-téléchargeables via script)
+data/*.csv
+
+# Fichiers système macOS
+.DS_Store
+
+# Secrets (clés d'accès MinIO, etc.)
+.env

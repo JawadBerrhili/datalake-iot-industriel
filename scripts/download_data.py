@@ -7,7 +7,7 @@ from pathlib import Path
 
 import requests
 
-# Dossier de destination (créé s'il n'existe pas déjà)
+# Dossier de destination (créé s'il n'existe pas)
 DATA_DIR = Path("data")
 DATA_DIR.mkdir(exist_ok=True)
 
@@ -25,7 +25,7 @@ FILES = {
 
 
 def md5_of_file(path):
-    """Calcule l'empreinte MD5 d'un fichier (lu en une fois, fichiers petits)."""
+    """Calcule l'empreinte MD5 d'un fichier"""
     contenu = path.read_bytes()          # lit tout le fichier en binaire
     return hashlib.md5(contenu).hexdigest()
 

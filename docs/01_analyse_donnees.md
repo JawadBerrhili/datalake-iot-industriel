@@ -1,26 +1,28 @@
 # Analyse des données sources
 
-## 1. Objectif
+## 1. Pourquoi cette analyse
 
-Ce document présente l'analyse des cinq fichiers de données avant toute
-décision technique. Il identifie le contenu, le volume et surtout les
-différences de structure entre les fichiers. Ces constats servent de base
-aux choix d'architecture du data lake.
+Avant de décider quoi que ce soit sur l'architecture, je regarde d'abord ce
+que contiennent vraiment les fichiers. Ce document note ce que j'ai trouvé :
+le contenu, le volume, et surtout les différences de structure entre les
+cinq fichiers. C'est ça qui guide ensuite mes choix techniques.
 
-## 2. Source des données
+## 2. D'où viennent les données
 
-Les données proviennent du jeu de données public "Synthetic Data from
-Industrial Sensor Monitoring" (Institut Polytechnique de Porto / INESC TEC),
-publié sur Zenodo en avril 2025.
+Les données viennent d'un jeu public publié sur Zenodo en avril 2025
+("Synthetic Data from Industrial Sensor Monitoring", Institut Polytechnique
+de Porto / INESC TEC).
 
-Elles simulent les relevés de capteurs de cinq lignes de production
-industrielles : température, pression, et pour certaines lignes le temps de
-fonctionnement. Chaque ligne possède aussi un indicateur d'anomalie.
+Elles simulent les relevés de capteurs de cinq lignes de production :
+température, pression, et pour certaines lignes le temps de fonctionnement.
+Il y a aussi un champ label : 0 quand tout est normal, 1 quand il y a une
+anomalie.
 
-L'intégrité des cinq fichiers a été vérifiée à l'aide des empreintes MD5
-officielles publiées par Zenodo (voir le script `scripts/download_data.py`).
+J'ai vérifié que les cinq fichiers étaient bien intègres en comparant leur
+empreinte MD5 avec celle fournie par Zenodo (voir le script
+scripts/download_data.py).
 
-## 3. Volumétrie et période
+## 3. Volume et période
 
 | Fichier               | Lignes | Période       |
 |-----------------------|--------|---------------|
@@ -30,16 +32,14 @@ officielles publiées par Zenodo (voir le script `scripts/download_data.py`).
 | LineD_SpikeControl.csv| 5 000  | Février 2025  |
 | LineE_SmoothRun.csv   | 5 000  | Janvier 2025  |
 
-Chaque fichier couvre un mois différent. Les mesures sont relevées chaque
-minute.
+Chaque fichier couvre un mois différent, avec une mesure par minute. Le
+volume est petit (moins de 1 Mo par fichier), donc je peux traiter les
+données simplement en mémoire.
 
-## 4. Structure de chaque fichier
+## 4. Structure des fichiers
 
-Les cinq fichiers partagent un socle commun : un horodatage (timestamp),
-une température, une pression, et un indicateur d'anomalie (label).
-Le champ label vaut 0 pour un fonctionnement normal et 1 pour une anomalie.
-
-Cependant, la structure exacte diffère d'un fichier à l'autre.
+Tous les fichiers ont une base commune : timestamp, température, pression et
+label. Mais la structure exacte change d'un fichier à l'autre.
 
 | Fichier | Colonne température | Colonne pression | elapsed_time |
 |---------|---------------------|------------------|--------------|
@@ -49,25 +49,23 @@ Cependant, la structure exacte diffère d'un fichier à l'autre.
 | LineD   | temperature         | Pressure         | absent       |
 | LineE   | Temperature         | pressure         | absent       |
 
-## 5. Différences de structure identifiées
+## 5. Les différences que j'ai repérées
 
-Trois différences ont été constatées entre les fichiers :
+En comparant les colonnes, je vois trois différences :
 
-1. **La casse de la colonne température.** Certains fichiers écrivent
-   "Temperature" avec une majuscule, d'autres "temperature" en minuscule.
+1. La casse de la température : parfois "Temperature", parfois "temperature".
 
-2. **La casse de la colonne pression.** Le fichier LineD écrit "Pressure"
-   avec une majuscule, tous les autres écrivent "pressure" en minuscule.
+2. La casse de la pression : LineD écrit "Pressure" avec une majuscule, les
+   autres écrivent "pressure".
 
-3. **Le champ elapsed_time.** Il est présent uniquement dans LineA et LineB,
-   et absent de LineC, LineD et LineE. De plus, sa casse diffère entre les
-   deux fichiers qui le contiennent : "elapsed_time" pour LineA,
-   "Elapsed_time" pour LineB.
+3. Le champ elapsed_time : il n'est présent que dans LineA et LineB, et même
+   là sa casse change ("elapsed_time" pour LineA, "Elapsed_time" pour LineB).
+   Il est absent de LineC, LineD et LineE.
 
-Cela empêche d'exploiter les cinq fichiers ensemble en l'état.
-Elle devra être corrigée lors de l'étape de transformation (couche staging).
+Tant que ce n'est pas corrigé, je ne peux pas traiter les cinq fichiers
+ensemble. Je règlerai ça à l'étape de transformation (couche staging).
 
-## 6. Répartition des anomalies
+## 6. Les anomalies
 
 | Fichier | Anomalies (label = 1) | Taux  |
 |---------|-----------------------|-------|
@@ -77,38 +75,34 @@ Elle devra être corrigée lors de l'étape de transformation (couche staging).
 | LineD   | 15                    | 0,30 %|
 | LineE   | 25                    | 0,50 %|
 
-Les anomalies sont rares dans tous les fichiers (entre 0,18 % et 4 %).
-Ce fort déséquilibre devra être pris en compte par le futur projet de
-maintenance prédictive.
+Les anomalies sont rares partout (entre 0,18 % et 4 %). Ce déséquilibre est
+important à garder en tête pour le futur projet de maintenance prédictive :
+un modèle qui dirait toujours "normal" aurait l'air bon mais ne servirait
+à rien.
 
-## 7. Écarts avec la fiche descriptive de la source
+## 7. Ce qui ne collait pas avec la fiche Zenodo
 
-L'analyse des données réelles a révélé trois écarts avec la fiche
-descriptive publiée sur Zenodo :
+En regardant les vraies données, je me suis aperçu que la fiche descriptive
+de Zenodo se trompait sur trois points :
 
-- La fiche annonçait 0 % d'anomalie pour LineE ; la donnée en contient 25.
-- La fiche annonçait environ 5 % d'anomalie pour LineD ; la donnée en
-  contient 0,3 %.
-- La fiche indiquait une plage de pression d'environ 19-20 pour LineB ;
-  les valeurs réelles sont d'environ 119.
+- Elle annonçait 0 % d'anomalie pour LineE, alors qu'il y en a 25.
+- Elle annonçait environ 5 % pour LineD, alors qu'il y en a 0,3 %.
+- Elle donnait une pression autour de 19-20 pour LineB, alors que les vraies
+  valeurs sont autour de 119.
 
-Ces écarts confirment qu'il faut documenter le data lake à partir des
-données réelles, et non de leur description.
+Du coup, je documenterai mes fiches à partir des vraies données, pas de la
+description.
 
-## 8. Conclusions et décisions techniques
+## 8. Ce que je décide pour la suite
 
-Les constats ci-dessus conduisent aux décisions suivantes :
+- Harmoniser les noms de colonnes en staging, tout en minuscules :
+  timestamp, temperature, pressure, elapsed_time, label.
 
-- **Harmonisation des noms de colonnes** en couche staging, vers une
-  convention unique en minuscules : timestamp, temperature, pressure,
-  elapsed_time, label.
+- Pour LineC, LineD et LineE qui n'ont pas elapsed_time, créer la colonne
+  avec une valeur vide, pour que les cinq fichiers aient le même schéma.
 
-- **Gestion du champ manquant** : pour LineC, LineD et LineE, la colonne
-  elapsed_time sera créée avec une valeur vide, afin que les cinq fichiers
-  partagent le même schéma.
+- Convertir le timestamp en vraie date (pour l'instant il est lu comme du
+  texte).
 
-- **Normalisation de l'horodatage** : le champ timestamp est actuellement
-  lu comme du texte. Il sera converti en type date et heure en staging.
-
-- **Partitionnement par mois** : le mois sera extrait de l'horodatage
-  plutôt que codé en dur, car chaque fichier couvre un mois distinct.
+- Partitionner par mois en extrayant le mois depuis le timestamp, parce que
+  chaque fichier couvre un mois différent.

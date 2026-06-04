@@ -226,3 +226,7 @@ data/*.csv
 
 # Secrets (clés d'accès MinIO, etc.)
 .env
+
+# Données stockées par MinIO (volume Docker, régénérable)
+docker/minio-data/
+EOF

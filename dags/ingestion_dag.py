@@ -65,7 +65,7 @@ def ingest_file(filename, info):
 with DAG(
     dag_id="ingestion_raw",
     description="Ingestion des CSV vers le bucket raw avec partitionnement",
-    start_date=datetime(2025, 1, 1),
+    start_date=datetime(2026, 1, 1),
     schedule=None,          # declenche manuellement, pas en auto
     catchup=False,
     tags=["datalake", "ingestion"],

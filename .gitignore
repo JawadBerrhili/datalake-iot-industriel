@@ -230,3 +230,7 @@ data/*.csv
 # Données stockées par MinIO (volume Docker, régénérable)
 docker/minio-data/
 EOF
+
+# Logs Airflow
+docker/airflow-logs/
+EOF

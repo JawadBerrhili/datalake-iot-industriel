@@ -519,6 +519,7 @@ services:
       - "8080:8080"
     networks:
       - app_net
+      - datalake-shared
     volumes:
       - ingestion-volume-dag-airflow:/opt/airflow/dag_generated_configs
       - ingestion-volume-dags:/opt/airflow/dags
@@ -531,3 +532,5 @@ networks:
       driver: default
       config:
         - subnet: "172.16.240.0/24"
+  datalake-shared:
+    external: true

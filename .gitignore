@@ -234,3 +234,6 @@ EOF
 # Logs Airflow
 docker/airflow-logs/
 EOF
+
+# Données générées par OpenMetadata (volumes lourds, à ne pas versionner)
+openmetadata/docker-volume/

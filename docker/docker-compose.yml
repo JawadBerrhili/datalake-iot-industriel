@@ -11,6 +11,9 @@ services:
     volumes:
       - ./minio-data:/data
     command: server /data --console-address ":9001"
+    networks:
+      - default
+      - datalake-shared
 
   airflow:
     image: apache/airflow:2.10.4
@@ -18,7 +21,7 @@ services:
     depends_on:
       - minio
     ports:
-      - "8080:8080"
+      - "8081:8080"
     environment:
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
       _PIP_ADDITIONAL_REQUIREMENTS: "boto3 pandas"
@@ -27,3 +30,8 @@ services:
       - ./airflow-logs:/opt/airflow/logs
       - ../data:/opt/airflow/data
     command: standalone
+
+networks:
+  datalake-shared:
+    external: true
+      

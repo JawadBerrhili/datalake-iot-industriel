@@ -98,3 +98,31 @@ l'administration complète depuis la console.
 déjà présent dans le conteneur MinIO. Cela m'a permis de configurer les
 règles ILM directement en commande, ce qui est aussi plus reproductible et
 traçable qu'une manipulation à la souris.
+
+## 8. Chiffrement SSE-S3 impossible sans gestionnaire de clés (KMS)
+
+**Problème.** Le brief demande d'activer le chiffrement SSE-S3 sur les
+buckets de production. En lançant la commande d'activation
+(mc encrypt set sse-s3 local/raw), MinIO a renvoyé une erreur : "Server
+side encryption specified but KMS is not configured". Le chiffrement au
+repos a besoin d'un gestionnaire de clés (KMS) pour stocker la clé de
+chiffrement, et mon MinIO local n'en avait aucun.
+
+**Solution.** La documentation MinIO propose deux approches. La première,
+lourde, consiste à déployer un service dédié appelé KES (Key Encryption
+Service) avec des certificats TLS, adapté à la production distribuée. La
+seconde, beaucoup plus simple et adaptée à un déploiement local sur un seul
+nœud, consiste à utiliser le KMS interne de MinIO, activé par une seule
+variable d'environnement : MINIO_KMS_SECRET_KEY.
+
+J'ai retenu la seconde approche. J'ai généré une clé maîtresse aléatoire
+avec openssl rand -base64 32, je l'ai stockée dans un fichier .env (non
+versionné, pour ne pas exposer le secret sur Git), et je l'ai référencée
+dans le docker-compose de MinIO via la variable MINIO_KMS_SECRET_KEY. Après
+redémarrage de MinIO, le KMS interne était actif (vérifié avec
+mc admin kms key status). La commande d'activation du chiffrement a alors
+fonctionné, et un fichier de test déposé dans raw affichait bien
+"Encryption: SSE-S3" dans ses métadonnées.
+
+En production, la clé maîtresse serait gérée par un coffre-fort externe
+(HashiCorp Vault, AWS KMS) via KES, plutôt que par le KMS interne.

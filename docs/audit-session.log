@@ -1,0 +1,7 @@
+2026-07-09T14:38:05.178 [200 OK] s3.GetBucketLocation localhost:9000/raw/?location=  [::1]            2.546ms      ⇣  2.377291ms  ↑ 93 B ↓ 128 B
+2026-07-09T14:38:05.181 [200 OK] s3.HeadBucket localhost:9000/raw/ [::1]            424µs       ⇣  323.917µs  ↑ 77 B ↓ 0 B
+2026-07-09T14:38:05.182 [200 OK] s3.ListObjectsV2 localhost:9000/raw/?delimiter=%2F&encoding-type=url&fetch-owner=true&list-type=2&prefix=  [::1]            12.702ms     ⇣  12.673833ms  ↑ 93 B ↓ 357 B
+2026-07-09T14:38:14.539 [403 Forbidden] s3.GetBucketLocation localhost:9000/raw/?location=  [::1]            1.533ms      ⇣  1.401417ms  ↑ 93 B ↓ 286 B
+2026-07-09T14:38:14.542 [403 Forbidden] s3.GetBucketObjectLockConfig localhost:9000/raw/?object-lock=  [::1]            385µs       ⇣  367.083µs  ↑ 93 B ↓ 286 B
+2026-07-09T14:38:14.543 [403 Forbidden] s3.HeadObject localhost:9000/raw/interdit.txt [::1]            1.691ms      ⇣  1.635042ms  ↑ 97 B ↓ 0 B
+2026-07-09T14:38:14.546 [403 Forbidden] s3.PutObject localhost:9000/raw/interdit.txt [::1]            332µs       ⇣  320.083µs  ↑ 135 B ↓ 321 B
